@@ -11,8 +11,11 @@ import com.acciojob.Library_Management_System.Repository.BookRepository;
 import com.acciojob.Library_Management_System.Repository.LibraryCardRepository;
 import com.acciojob.Library_Management_System.Repository.TransactionRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.mail.SimpleMailMessage;
+import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -23,6 +26,9 @@ public class TransactionService {
     BookRepository bookRepository;
     @Autowired
     TransactionRepository transactionRepository;
+
+    @Autowired
+    private JavaMailSender emailSender;
     public IssueReturnBookResponseDto isIssueeBook(IssueReturnBookRequestDto issueReturnBookRequestDto) throws Exception {
 
         Transaction transaction = new Transaction();
@@ -86,6 +92,16 @@ public class TransactionService {
         issueReturnBookResponseDto.setTransactionId(transaction.getTransactionNumber());
         issueReturnBookResponseDto.setTransactionStatus(TransactionStatus.SUCCESS);
 
+        // send an email
+        String text = "Congrats...!!"+ card.getStudent().getName()+" You have been issued "+book.getTitle()+" book";
+
+        SimpleMailMessage message = new SimpleMailMessage();
+        message.setFrom("acciojobshravan@gmail.com");
+        message.setTo(card.getStudent().getEmail());
+        message.setSubject("Issue Book Notification");
+        message.setText(text);
+        emailSender.send(message);
+
         return issueReturnBookResponseDto;
     }
 
@@ -143,5 +159,16 @@ public class TransactionService {
         issueReturnBookResponseDto.setTransactionStatus(TransactionStatus.SUCCESS);
 
         return issueReturnBookResponseDto;
+    }
+
+    public String getAllTxns(int cardId) {
+        List<Transaction> transactionList = transactionRepository.getAllSuccessfullTxnsWithCardNo(cardId);
+
+        String ans ="";
+        for(Transaction t : transactionList){
+            ans+= t.getTransactionNumber();
+            ans+="\n";
+        }
+        return ans;
     }
 }
